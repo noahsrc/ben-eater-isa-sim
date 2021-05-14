@@ -1,0 +1,8 @@
+{
+  "runtimeOptions": {
+    "additionalProbingPaths": [
+      "C:\\Users\\Noah\\.dotnet\\store\\|arch|\\|tfm|",
+      "C:\\Users\\Noah\\.nuget\\packages"
+    ]
+  }
+}

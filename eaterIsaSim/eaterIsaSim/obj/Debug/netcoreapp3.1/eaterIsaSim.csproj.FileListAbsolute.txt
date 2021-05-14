@@ -1,0 +1,15 @@
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\bin\Debug\netcoreapp3.1\eaterIsaSim.exe
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\bin\Debug\netcoreapp3.1\eaterIsaSim.deps.json
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\bin\Debug\netcoreapp3.1\eaterIsaSim.runtimeconfig.json
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\bin\Debug\netcoreapp3.1\eaterIsaSim.runtimeconfig.dev.json
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\bin\Debug\netcoreapp3.1\eaterIsaSim.dll
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\bin\Debug\netcoreapp3.1\eaterIsaSim.pdb
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.csprojAssemblyReference.cache
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.Form1.resources
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.csproj.GenerateResource.cache
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.AssemblyInfoInputs.cache
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.AssemblyInfo.cs
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.csproj.CoreCompileInputs.cache
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.dll
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.pdb
+C:\Users\Noah\source\repos\eaterIsaSim\eaterIsaSim\obj\Debug\netcoreapp3.1\eaterIsaSim.genruntimeconfig.cache
