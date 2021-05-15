@@ -3,17 +3,14 @@
  * 14 May 2021
  * 
  * My GitHub: https://github.com/noahsrc
- * My YouTube: https://bit.ly/33N5vJP
+ * My YouTube: https://www.youtube.com/c/noahsrc
  * 
  * Ben Eater's GitHub: https://github.com/beneater
- * Ben Eater's Youtube: https://bit.ly/3eMXKtH
+ * Ben Eater's Youtube: https://www.youtube.com/user/eaterbc
  * 
  * This class simulates a memory module with
- * the specified size of RAM_ADDR_SPACE set
- * with the constructor. Default is 16 bits
- * or 0xF. Address space is set using hex and
- * +1 is added to the array allocation to
- * account for address space 0x0.
+ * the specified size of MAX_BYTES set
+ * with the constructor. Default is 16 bytes.
  * 
  * This class also simulates 2 registers.
  * Register A and OUT.
@@ -34,7 +31,7 @@ namespace eaterIsaSim
     class Memory
     {
         // Address space of RAM
-        private uint RAM_ADDR_SPACE;
+        private uint MAX_BYTES;
 
         // Ram contents
         private uint[] ram;
@@ -51,10 +48,10 @@ namespace eaterIsaSim
         public Memory(uint[] pgm, uint space)
         {
             // Set memory module address space
-            RAM_ADDR_SPACE = space;
+            MAX_BYTES = space;
 
             // Allocate memory for RAM
-            ram = new uint[RAM_ADDR_SPACE + 1];
+            ram = new uint[MAX_BYTES];
 
             // Initialize RAM
             for (int i = 0; i < ram.Length; i++)
@@ -80,7 +77,7 @@ namespace eaterIsaSim
         private bool CheckAddress(uint addr)
         {
             // Return value at RAM address if within range
-            if (addr >= 0x0 && addr <= RAM_ADDR_SPACE)
+            if (addr >= 0x0 && addr < MAX_BYTES)
             {
                 return true;
             }
@@ -133,7 +130,7 @@ namespace eaterIsaSim
         // Return the amount of RAM address space
         public uint GetRamSpace()
         {
-            return RAM_ADDR_SPACE;
+            return MAX_BYTES;
         }
     }
 }

@@ -3,23 +3,39 @@
  * 14 May 2021
  * 
  * My GitHub: https://github.com/noahsrc
- * My YouTube: https://bit.ly/33N5vJP
+ * My YouTube: https://www.youtube.com/c/noahsrc
  * 
  * Ben Eater's GitHub: https://github.com/beneater
- * Ben Eater's Youtube: https://bit.ly/3eMXKtH
+ * Ben Eater's Youtube: https://www.youtube.com/user/eaterbc
  * 
  * This class simulates the instruction set from
  * Ben Eater's 8-bit breadboard computer. There
  * are 11 instructions and space for 5 more. Call
  * run to begin the simulation. The program counter
  * starts at 0x0 and iterates through each memory
- * location in RAM until one of three conditions
+ * location in RAM until one of four conditions
  * is met:
  * 
  * -- The HLT instruction is called
  * -- The MAX_INSNS have been executed
  * -- The program counter points to invalid memory
+ * -- The thread is signaled to terminate
  */
+
+/*
+ * Update (15 May 2021):
+ * 
+ * Added multithreading support. This class is
+ * now created in a thread object. This allows
+ * the user to maintain use of buttons and text
+ * boxes.
+ * 
+ * Updated display text for executed instructions.
+ */
+
+using System;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace eaterIsaSim
 {
@@ -27,7 +43,10 @@ namespace eaterIsaSim
     {
         // Maximum number of instructions that may be executed
         // before termination
-        private const int MAX_INSNS = 500;
+        private int MAX_INSNS;
+
+        // Delay between instructions in milliseconds
+        private int INSN_DELAY;
 
         // Reference to memory in Form1 class
         private Memory mem;
@@ -46,18 +65,40 @@ namespace eaterIsaSim
         // Points to a memory location in RAM
         private uint pc;
 
-        // Number if instructions executed
+        // Number of instructions executed
         private int insnCount;
 
+        // Refence to output register
+        private TextBox outputRegister;
+
+        // This is used to terminate the thread before the
+        // program completes
+        private readonly ManualResetEvent terminateEvent = new ManualResetEvent(false);
+
         // Constructor
-        public EaterIsa(ref Memory m)
+        public EaterIsa(ref Memory m, ref TextBox outputReg, int insnCount, int insnDelay)
         {
+            // Set memory reference
             mem = m;
+
+            // Set output register reference
+            outputRegister = outputReg;
+
+            // Set "constant" variables
+            MAX_INSNS = insnCount;
+            INSN_DELAY = insnDelay;
+
+            // Set flags
             halt = false;
             zeroFlag = false;
             carryFlag = false;
+
+            // Set program counter
             pc = 0x0;
+
+            // Set instruction count
             insnCount = 0;
+            
         }
 
         // NO OPERATION :: 0000
@@ -66,7 +107,7 @@ namespace eaterIsaSim
             // Increment program counter
             pc += 0x1;
 
-            return "NOP (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: No operation.";
+            return "0x" + insn.ToString("X") + " (NOP): No operation.";
         }
 
         // LOAD A :: 0001
@@ -79,7 +120,7 @@ namespace eaterIsaSim
             // Increment program counter 1 byte
             pc += 0x1;
 
-            return "LDA (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Loaded 0x" + mem.RegA.ToString("X")
+            return "0x" + insn.ToString("X") + " (LDA): Loaded 0x" + mem.RegA.ToString("X")
                 + " into register A from memory location 0x" + Hex.GetLowNibble(insn).ToString("X") + ".";
         }
 
@@ -96,8 +137,8 @@ namespace eaterIsaSim
 
             pc += 0x1;
 
-            return "ADD (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: The sum of register A and B is 0x"
-                + mem.RegA.ToString("X") + ". Stored in register A.";
+            return "0x" + insn.ToString("X") + " (ADD): The sum of register A and B is 0x"
+                + mem.RegA.ToString("X") + ".";
         }
 
         // SUBTRACT :: 0011
@@ -113,8 +154,8 @@ namespace eaterIsaSim
 
             pc += 0x1;
 
-            return "SUB (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: The difference of register A and B is 0x"
-                + mem.RegA.ToString("X") + ". Stored in register A.";
+            return "0x" + insn.ToString("X") + " (SUB): The difference of register A and B is 0x"
+                + mem.RegA.ToString("X") + ".";
         }
 
         // STORE A :: 0100
@@ -126,7 +167,7 @@ namespace eaterIsaSim
 
             pc += 0x1;
 
-            return "STA (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Stored 0x" + mem.RegA.ToString("X") + " at location 0x"
+            return "0x" + insn.ToString("X") + " (STA): Stored 0x" + mem.RegA.ToString("X") + " at location 0x"
                 + Hex.GetLowNibble(insn).ToString("X") + " in memory.";
         }
 
@@ -139,7 +180,7 @@ namespace eaterIsaSim
 
             pc += 0x1;
 
-            return "LDI (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Loaded immediate 0x" + mem.RegA.ToString("X")
+            return "0x" + insn.ToString("X") + " (LDI): Loaded immediate 0x" + mem.RegA.ToString("X")
                 + " into register A.";
         }
 
@@ -150,7 +191,7 @@ namespace eaterIsaSim
             // Set program counter to specified memory address
             pc = Hex.GetLowNibble(insn);
 
-            return "JMP (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Jumped to location 0x" + pc.ToString("X")
+            return "0x" + insn.ToString("X") + " (JMP): Jumped to location 0x" + pc.ToString("X")
                 + " in memory.";
         }
 
@@ -164,14 +205,14 @@ namespace eaterIsaSim
             {
                 pc = Hex.GetLowNibble(insn);
 
-                return "JC (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Carry true. Jumped to location 0x"
+                return "0x" + insn.ToString("X") + " (JC) : Carry true. Jumped to location 0x"
                     + pc.ToString("X") + " in memory.";
             }
 
             // Increment program counter if carry flag is false
             pc += 0x1;
 
-            return "JC (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Carry false. Did not jump to 0x"
+            return "0x" + insn.ToString("X") + " (JC) : Carry false. Did not jump to 0x"
                 + Hex.GetLowNibble(insn).ToString("X") + " in memory.";
         }
 
@@ -184,14 +225,14 @@ namespace eaterIsaSim
             if (zeroFlag)
             {
                 pc = Hex.GetLowNibble(insn);
-                return "JZ (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Zero true. Jumped to location 0x"
+                return "0x" + insn.ToString("X") + " (JZ) : Zero true. Jumped to location 0x"
                     + pc.ToString("X") + " in memory.";
             }
 
             // Increment program counter if zero flag is false
             pc += 0x1;
 
-            return "JZ (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Zero false. Did not jump to 0x"
+            return "0x" + insn.ToString("X") + " (JZ) : Zero false. Did not jump to 0x"
                 + Hex.GetLowNibble(insn).ToString("X") + " in memory.";
         }
 
@@ -204,7 +245,12 @@ namespace eaterIsaSim
 
             pc += 0x1;
 
-            return "DSP (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Displaying 0x" + mem.RegOut.ToString("X")
+            //outputRegister.Clear();
+            //outputRegister.AppendText(mem.RegOut.ToString());
+
+            DisplayText(outputRegister, mem.RegOut.ToString());
+
+            return "0x" + insn.ToString("X") + " (OUT): Displaying 0x" + mem.RegOut.ToString("X")
                 + " (" + mem.RegOut + ") from memory location 0x" + Hex.GetLowNibble(insn).ToString("X") + ".";
         }
 
@@ -217,7 +263,7 @@ namespace eaterIsaSim
 
             pc += 0x1;
 
-            return "HLT (0x" + Hex.GetHighNibble(insn).ToString("X") + ") :: Program halted.";
+            return "0x" + insn.ToString("X") + " (HLT): Program halted.";
         }
 
         // Called after arithmetic operation to
@@ -277,20 +323,56 @@ namespace eaterIsaSim
         // MAX_INSNS prevents an infinite loop.
         // Halt can be called by the program to terminate
         // execution.
-        public void Run()
+        public void Run(TextBox ProgramOutput)
         {
             // Execute the program while within address space,
             // not halted, and less than max instructions.
-            while(!halt && pc <= mem.GetRamSpace() && insnCount < MAX_INSNS)
+            while(!halt && pc < mem.GetRamSpace() && insnCount < MAX_INSNS)
             {
                 // Execute instruction
-                System.Diagnostics.Debug.WriteLine("PC (0x" + pc.ToString("X") + ") :: " + Decode(mem.GetRamAt(pc)));
+                AppendText(ProgramOutput, "0x" + pc.ToString("X") + ": " + Decode(mem.GetRamAt(pc)));
 
                 // Increment instruction count
                 insnCount++;
+
+                // Exit loop if early terminate is called
+                if (terminateEvent.WaitOne(0))
+                {
+                    break;
+                }
+
+                // Halt for duration of INSN_DELAY
+                terminateEvent.WaitOne(INSN_DELAY);
             }
 
-            System.Diagnostics.Debug.WriteLine("Program terminated. " + insnCount + " instructions executed.");
+            AppendText(ProgramOutput, "Program terminated. " + insnCount + " instructions executed.");
+        }
+
+        // Sets textbox text in main thread
+        private void DisplayText(TextBox tb, string text)
+        {
+            tb.Invoke((Action)delegate
+            {
+                tb.Text = text;
+            });
+        }
+
+        // Appends text to textbox in main thread
+        private void AppendText(TextBox tb, string text)
+        {
+            tb.Invoke((Action)delegate
+            {
+                tb.Text += text + Environment.NewLine;
+
+                tb.SelectionStart = tb.Text.Length;
+                tb.ScrollToCaret();
+            });
+        }
+
+        // Called by main thread to terminate this thread early
+        public void Terminate()
+        {
+            terminateEvent.Set();
         }
     }
 }
